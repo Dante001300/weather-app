@@ -1,0 +1,231 @@
+--------------------------------lession 31-------------------- making HTTP request
+
+const request = require('request') // load in the module request to pull HTML
+
+const url =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233'
+
+request({url: url},(error,response)=>{
+  //console.log(response) // this will give A LOT of information so we need to parse it with json string
+  const data = JSON.parse(response.body)
+  console.log(data.current) // .current see the current temperature
+})
+
+--------------------------------lession 32-------------------- customizing HTTP request
+http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233 change to
+http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f
+
+const request = require('request') // load in the module request to pull HTML
+
+const url =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+
+request({url: url, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+  //console.log(response)  // to see full result
+  console.log(response.body.current.weather_descriptions[0]+' Overcast it is currently '+ response.body.current.temperature + ', but it fees like ' + response.body.current.feelslike) // because json: true already parse the data so we don't need to parse it  
+})
+
+--------------------------------lession 33-------------------- HTTP request challenge
+const request = require('request') // load in the module request to pull HTML
+
+const url =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+
+request({url: url, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+  //console.log(response)  // to see full result
+  console.log(response.body.current.weather_descriptions[0]+' Overcast it is currently '+ response.body.current.temperature + ', but it fees like ' + response.body.current.feelslike) // because json: true already parse the data so we don't need to parse it  
+})
+
+request({url: geourl, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+  const longtitude = response.body.features[0].center[0] //feature is an array of 1 and center is also an array of 1 go to url to check
+  const latitude = response.body.features[0].center[1] // longtitude is the array of index of 1
+  console.log(latitude, longtitude)
+})
+--------------------------------lession 34----------------------------------------------------- Handling Erros
+const request = require('request') // load in the module request to pull HTML
+
+const weatherurl =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+
+  //console.log(response)  // to see full result
+
+request({url: weatherurl, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+if(error){
+  console.log('Can not connect to the internet.')
+}else if(response.body.error){
+  console.log('URL does not exist')
+}else{
+  console.log(response.body.current.weather_descriptions[0]+' it is currently '+ response.body.current.temperature + ', but it fees like ' + response.body.current.feelslike) // because json: true already parse the data so we don't need to parse it  
+}
+})
+
+request({url: geourl, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+  if(error){
+    console.log('No internet connection')
+  }else if(response.body.features.length===0){
+    console.log('URL does not exist')
+  }else{
+    const longtitude = response.body.features[0].center[0] //feature is an array of 1 and center is also an array of 1 go to url to check
+    const latitude = response.body.features[0].center[1] // longtitude is the array of index of 1
+    console.log(latitude, longtitude)
+  }
+})
+
+--------------------------------lession 35----------------------------------------------------- The callback Function
+
+const add = (a,b,callback) =>{
+    setTimeout(()=>{
+        callback(a+b)
+    },2000)
+}
+
+add(1, 4, (sum) => {
+    console.log(sum) // Should print: 5
+})
+
+--------------------------------lession 36----------------------------------------------------- Callback Abstraction
+1. inside geocode. js
+
+const request = require ('request')
+
+const geocode = (address,callback)=>{
+    const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+  
+    request({url: geourl, json:true}, (error,response)=>{  //the callback function will take in 2 items the error and response
+      if(error){
+        callback('No internet connection',undefined) // because there's an error so no resposne hence second item is undefined.
+      }else if(response.body.features.length===0){
+        callback('URL does not exist',undefined)
+      }else{
+        callback(undefined,{  // first item is error but since we know there will be no error so set it to undefined
+          longtitude: response.body.features[0].center[0], // this is the data contain in the 2nd item of geocode which is callback
+          latitude: response.body.features[0].center[1],
+          location: response.body.features[0].place_name // this is a new data go to url browser and see
+        })
+  
+      }
+    })
+  }
+  
+  module.exports = geocode
+
+  ----------------------------------------------------inside app.js-----------------------------------
+
+  const request = require('request') // load in the module request to pull HTML
+const geocode = require('./utils/geocode') // pass in the geocdoe file we just make into app.js
+
+const weatherurl =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+// const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+
+  //console.log(response)  // to see full result
+
+/*--------------------------------------------weather------------------------------------------------------------ */
+
+// request({url: weatherurl, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+// if(error){
+//   console.log('Can not connect to the internet.')
+// }else if(response.body.error){
+//   console.log('URL does not exist')
+// }else{
+//   console.log(response.body.current.weather_descriptions[0]+' it is currently '+ response.body.current.temperature + ', but it fees like ' + response.body.current.feelslike) // because json: true already parse the data so we don't need to parse it  
+// }
+// })
+
+
+
+/*----------------------------------------------Geo----------------------------------------------------------- */
+
+geocode('Georgia',(error,data)=>{
+  console.log('error', error)
+  console.log('data', data)
+})
+//these lines above is to call the function geocode.js into app.js
+/*----------------------------------------------Geo----------------------------------------------------------- */
+
+
+--------------------------------lession 37----------------------------------------------------- Callback Abstraction challenge
+1. Inside app.js 
+
+                forecast(44.1545, -75.7088,(error,data)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+                console.log('error', error)
+                console.log('Data', data)
+                  })
+
+2. Inside forecast.js
+
+            const request = require('request') // load the request module from package json
+
+            const forecast = (latitude, longitude, callback) => {
+                const url = 'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=' + latitude + ',' + longitude + '&units=f'
+              
+                request({ url: url, json: true }, (error, response) => {
+                    if (error) {
+                        callback('No internet connection', undefined)
+                    } else if (response.body.error) {
+                        callback('Bad URL', undefined)
+                    } else {
+                        callback(undefined, response.body.current.weather_descriptions[0] + ". It is currently " + response.body.current.temperature + " degress out.")
+                    }
+                })
+              }
+            module.exports = forecast // export danteforecast function
+
+
+--------------------------------lession 38----------------------------------------------------- Callback Chaining
+1. Code before the challenge for accept location from command line
+
+const request = require('request') // load in the module request to pull HTML
+const geocode = require('./utils/geocode') // pass in the geocdoe file we just make into app.js
+const forecast = require('./utils/forecast')
+
+
+//const weatherurl =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+// const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+geocode('Georgia',(error,data)=>{
+  if(error){
+    return console.log('error', error)  // return will stop the code if error found
+  }
+  //console.log('data', data) // we no longer need this
+
+  forecast(data.latitude, data.longtitude,(error,forecastdata)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+    if(error){
+      console.log('error', error)
+    }else
+    console.log('Location: ', data.location) // we'll pass the location from geocode and its callback variable is data here
+    console.log(forecastdata)
+    
+  })
+})
+
+                                              2. Challenge code
+
+const request = require('request') // load in the module request to pull HTML
+const geocode = require('./utils/geocode') // pass in the geocdoe file we just make into app.js
+const forecast = require('./utils/forecast')
+
+console.log(process.argv)
+const address = process.argv[2]
+
+if(!address){
+  console.log('Please provide an location')
+}else{
+  geocode(address,(error,data)=>{
+    if(error){
+      return console.log('error', error)  // return will stop the code if error found
+    }
+    //console.log('data', data) // we no longer need this
+  
+    forecast(data.latitude, data.longtitude,(error,forecastdata)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+      if(error){
+        console.log('error', error)
+      }else
+      console.log('Location: ', data.location) // we'll pass the location from geocode and its callback variable is data here
+      console.log(forecastdata)
+      
+    })
+  })
+}
+
+
+//const weatherurl =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233&units=f'
+// const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+
+

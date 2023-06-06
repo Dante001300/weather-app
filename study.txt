@@ -1,0 +1,214 @@
+--------------------------------lession 31-------------------- making HTTP request
+            https://weatherstack.com/
+
+1. Weatherstak API access key 5db9d06b9599615eaaea970ef52430f4
+
+2. Go to browser
+
+http://api.weatherstack.com/  +   current?access_key=  +  5db9d06b9599615eaaea970ef52430f4  +   &query= 37.8267,-122.4233
+
+    ? access_key = 5db9d06b9599615eaaea970ef52430f4
+    & query = london
+
+3. To make HTTP request, we're going to use npm module called "request"
+    initialize weather-app as an npm project by ---------------> npm init -y
+4. now install the request module npm i request@2.88.0
+5. create a variable with the url --> const url =  'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233'
+6. Now to make the request via the terminal
+    request() has 2 arguments. 
+        1st: argument is an option object which outline what we'd like to do, this is where we provide the url
+        2nd: argument is a functio to run once we have that response
+            the 2nd argument get called with 2 argument: it gets called with an "error" and get called with a "response"
+    request({url: url},(error,response)=>{})
+7.  if we run     request({url: url},(error,response)=>{console.log(response)}) we will get A LOT OF INFORMATION for now we'll 
+focus on the body property
+
+8. we can do this with .parse JSON string --> we're going to parse these data and these data live in response and body
+      const data = JSON.parse(response.body)
+      console.log(data)
+
+--------------------------------lession 32-------------------- customizing HTTP request
+1. We can have the request() module automatically parse the JSOn response for us by
+        request({url: url, json: true},(error,response)=>{
+            console.log(response.body.current) // because json: true already parse the data so we don't need to parse it  
+        })
+2. The information we're accessing is from the body of http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=%2037.8267,-122.4233
+and we can access to the information from body such as "current" "location" "weather_description" 
+3. to change the temperature unit from metric to imperial or fahrenheit change add another query to the url
+4. Next to print the weather_description which locate inside current and it's an array hence
+      console.log(response.body.current.weather_descriptions[0])
+
+--------------------------------lession 33-------------------- HTTP request challenge
+                    https://www.mapbox.com/
+
+https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=    pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww
+
+1. if go to the link above we'll get a JSON response. The root of our response is just an object with 4 property: type, query, features and attribution
+2. feature[] is an array consist of 5 items. It contains the contents that we want to extract
+3. inside feature --> center gives longtitude and latitude
+4. to limit the result use "limit" in the url  ----> &limit=1
+https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1
+5. Now to print the latitude and longtitude go to the above url long and lat are located in center[] which is located inside features[]
+        const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/Los%20Angeles.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+        
+        request({url: geourl, json: true},(error,response)=>{ // json: true will automatically parse the data for us
+        
+        const longtitude = response.body.features[0].center[0] //feature is an array of 1 and center is also an array of 1 go to url to check
+        const latitude = response.body.features[0].center[1] // longtitude is the array of index of 1
+        console.log(latitude, longtitude)
+        })
+
+--------------------------------lession 34---------------------------------------------- Handling error
+
+1. In this lession handle error when url is bad, there's no internet
+2. we'll use the if statement to detect error if there's no internet
+    if(error){
+  console.log('Can not connect to the internet.')}
+3. we'll use the if statement to detect error if there's a bad url
+4. If the URL is bad it's usually comes back in response rather than error in JSON
+
+1. To generate a bad URL for Geo go to the link below
+https://api.mapbox.com/geocoding/v5/mapbox.places/whatevasfsdfsdfer.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1
+2. In the bad URL the feature[] has zero content so if there's a bad URL response.body.features.length===0
+
+3. To generate a bad URL in weather 
+http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=
+4. if response.body.error exist then there's a bad url
+else if(response.body.error){
+  console.log('URL does not exist')
+}
+
+--------------------------------lession 35----------------------------------------------------- The callback Function
+1.  inside playground create a file name 4-callback.js --> callback example for geocode
+
+
+        const geocode = (danteaddress, dantecallback) => {
+
+            setTimeout (()=>{
+                const dantedata = {
+                    latitude:0,
+                    longtitude:0
+                }
+                dantecallback(dantedata)
+            },2000)
+        }
+        geocode('georgia', (doesnotmatter) =>{
+            console.log(doesnotmatter)
+        })
+
+--------------------------------lession 36----------------------------------------------------- Callback Abstraction
+1. Improve Geocode with callback functions
+2. This is the outline of the callback function 
+
+        const geocode = (address,callback)=>{
+const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+        }
+
+        geocode('Georgia',(error,data))=>{
+        }
+
+first line of code is to address to variable that the callback function is going to use
+second line of code address is for georgia; and we will call back error, data
+3. Next is to request the url just like before, but inside of the callback function
+        Now create a folder name utils and a file inside it call geocode.js
+        and pass in these code
+
+        const request = require('request')
+
+    const geocode = (address,callback)=>{
+    const geourl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=pk.eyJ1IjoidHFwZWFjZW1ha2VyIiwiYSI6ImNsaHk0ang3aTAzN2cza3A1enVvZmFidGwifQ.roK-xXrCOFMO9N9JM5kKww&limit=1'
+  
+    request({url: geourl, json:true}, (error,response)=>{  //the callback function will take in 2 items the error and response
+      if(error){
+        callback('No internet connection',undefined) // because there's an error so no resposne hence second item is undefined.
+      }else if(response.body.features.length===0){
+        callback('URL does not exist',undefined)
+      }else{
+        callback(undefined,{  // first item is error but since we know there will be no error so set it to undefined
+          longtitude: response.body.features[0].center[0], // this is the data contain in the 2nd item of geocode which is callback
+          latitude: response.body.features[0].center[1],
+          location: response.body.features[0].place_name // this is a new data go to url browser and see
+        })
+  
+      }
+    })
+  }
+  module.exports = geocode
+
+4.pass in the geocdoe file we just make into app.js
+ const geocode = require('./utils/geocode') 
+5. finall to call the geocode function add these lines in app.js
+
+  geocode('Georgia',(error,data)=>{
+    console.log('error', error)
+    console.log('data', data)
+  })
+
+--------------------------------lession 37----------------------------------------------------- Callback Abstraction challenge
+1. In this challenge we will write the callback function for weather forecast
+2. Inside app.js 
+        forecast(44.1545, -75.7088,(error,data)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+          console.log('error', error)
+          console.log('Data', data)
+        })
+3. From the above code the forecast function has 3 variable latitude=44.15 longitude=-75.7 and callback=(error,data) so
+we will create a forecast function with will take in 3 input
+          forecast = (latitude,long,callback) ={
+          }
+4. Then will will fill in the code just as geocode inside forecast()
+          const forecast = (latitude, longitude, callback) => {
+    const url = 'http://api.weatherstack.com/current?access_key=5db9d06b9599615eaaea970ef52430f4&query=' + latitude + ',' + longitude + '&units=f'
+    request({ url: url, json: true }, (error, response) => {
+        if (error) {
+            callback('No internet connection', undefined)
+        } else if (response.body.error) {
+            callback('Bad URL', undefined)
+        } else {
+            callback(undefined, response.body.current.weather_descriptions[0] + ". It is currently " + response.body.current.temperature + " degress out.")
+        }
+    })
+  }
+  
+--------------------------------lession 38----------------------------------------------------- Callback Chaining
+
+1. We are going to chain the forecast into the geocode 
+2. Geocode will return the long and latitude and we'll chain it with forecast to identify the location
+3. inside app.js
+              geocode('Georgia',(error,data)=>{
+              console.log('error', error)
+              console.log('data', data)
+
+              forecast(data.latitude, data.longtitude,(error,data)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+                console.log('error', error)
+                console.log('Data', data)
+              })
+            })
+4. data.latitude is the date from callback of geocode which contain lat and longitude
+            geocode('Georgia',(error,data)=>{
+            if(error){
+              return console.log('error', error)  // return will stop the code if error found
+            }
+            //console.log('data', data) // we no longer need this
+
+            forecast(data.latitude, data.longtitude,(error,forecastdata)=>{  // becarefull with the longitude and altitude wrong order and it won't work
+              if(error){
+                console.log('error', error)
+              }else
+              console.log('Location: ', data.location) // we'll pass the location from geocode and its callback variable is data here
+              console.log(forecastdata)
+            })
+          })
+
+5. The challenge in this lession: Accept location via command line argument
+6. To get this done we need to use argv property on process --> type in console.log(process.argv)
+7. If we run the above command line we'll get
+            /usr/bin/node
+            /home/dan/Desktop/UdemyNodeJs/weather-app/app.js
+            Location:  Georgia, United States
+            Partly cloudy. It is currently 79 degress out.
+8. As we can see Georgia is in the 3rd item with the index of 2
+9. We can use this information to replace Georgia in this line --> geocode('Georgia',(error,data)=>{
+10. const address = process.argv[2]  //2nd index
+11. geocode(address,(error,data)=>{  // replaced georgia with address
+12. Try running this command line now ----> node app.js "Georgia"
+13. 
